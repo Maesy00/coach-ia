@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Coach.ia</title>
+  <meta name="description" content="Planifier, s'entraîner, progresser.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/favicon-32.png">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Coach.ia">
+  <meta name="theme-color" content="#0a0a0b">
+  <script>
+    // Thème appliqué avant l'affichage, pour éviter un flash clair/sombre.
+    // En clair, la barre d'état de l'iPhone passe en texte foncé (au prochain lancement).
+    (function () {
+      var choice = "dark";
+      try { choice = localStorage.getItem("coach.theme") || "dark"; } catch (e) {}
+      var light = choice === "light" || (choice === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
+      document.documentElement.dataset.theme = light ? "light" : "dark";
+      if (light) {
+        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = "default";
+        document.querySelector('meta[name="theme-color"]').content = "#f7f7f5";
+      }
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="auth-gate" hidden>
+    <div class="auth-card">
+      <img class="auth-logo" src="images/icon-192.png" alt="" width="64" height="64">
+      <h1 class="large-title" id="auth-title">Connexion</h1>
+      <p class="auth-subtitle">Coach.ia — le même compte qu'Aurora, Ironly et Pause.</p>
+      <form id="auth-form">
+        <label class="field">
+          <span class="visually-hidden">Email</span>
+          <input class="input" type="email" id="auth-email" placeholder="Email" required autocomplete="email">
+        </label>
+        <label class="field">
+          <span class="visually-hidden">Mot de passe</span>
+          <input class="input" type="password" id="auth-password" placeholder="Mot de passe" required autocomplete="current-password" minlength="6">
+        </label>
+        <p id="auth-error" class="auth-message error" hidden></p>
+        <p id="auth-info" class="auth-message info" hidden></p>
+        <button type="submit" class="btn btn-primary btn-block" id="auth-submit-btn">Se connecter</button>
+      </form>
+      <p class="auth-switch"><span id="auth-switch-text">Pas encore de compte ?</span> <button type="button" id="auth-toggle-mode">Créer un compte</button></p>
+    </div>
+  </div>
+
+  <div id="app-shell" hidden>
+    <main class="screens">
+      <section class="screen active" id="screen-today" aria-label="Aujourd'hui"></section>
+      <section class="screen" id="screen-week" aria-label="Semaine"></section>
+      <section class="screen" id="screen-strength" aria-label="Muscu"></section>
+      <section class="screen" id="screen-history" aria-label="Historique"></section>
+    </main>
+
+    <nav class="tabbar" role="tablist" aria-label="Navigation">
+      <button type="button" class="tab" role="tab" data-tab="today" aria-selected="true">
+        <i class="ph ph-house" aria-hidden="true"></i><i class="ph-fill ph-house" aria-hidden="true"></i>Aujourd'hui
+      </button>
+      <button type="button" class="tab" role="tab" data-tab="week" aria-selected="false">
+        <i class="ph ph-calendar-blank" aria-hidden="true"></i><i class="ph-fill ph-calendar-blank" aria-hidden="true"></i>Semaine
+      </button>
+      <button type="button" class="tab" role="tab" data-tab="strength" aria-selected="false">
+        <i class="ph ph-barbell" aria-hidden="true"></i><i class="ph-fill ph-barbell" aria-hidden="true"></i>Muscu
+      </button>
+      <button type="button" class="tab" role="tab" data-tab="history" aria-selected="false">
+        <i class="ph ph-chart-line-up" aria-hidden="true"></i><i class="ph-fill ph-chart-line-up" aria-hidden="true"></i>Historique
+      </button>
+    </nav>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/ui/core.js"></script>
+  <script src="js/ui/sheet.js"></script>
+  <script src="js/ui/page.js"></script>
+  <script src="js/ui/chart.js"></script>
+  <script src="js/sports.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/modules/settings.js"></script>
+  <script src="js/modules/design-system.js"></script>
+  <script src="js/modules/today.js"></script>
+  <script src="js/modules/placeholders.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
