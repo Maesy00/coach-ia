@@ -1,6 +1,6 @@
 /*
  * tokens.css — le design system de Coach.ia en variables.
- * Sombre par défaut ; clair via <html data-theme="light">.
+ * Fond blanc par défaut (<html data-theme="light">) ; sombre disponible.
  * Une seule couleur d'accent (volt). Les sports ont leur propre
  * couleur, utilisée discrètement (fond à ~14 %, pictogramme).
  */
@@ -68,17 +68,17 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --surface-2: #f0f0ed;
-  --surface-3: #e7e7e3;
-  --border: rgba(10, 10, 11, 0.08);
-  --border-strong: rgba(10, 10, 11, 0.14);
+  --bg: #ffffff;
+  --surface: #f6f6f4;
+  --surface-2: #eeeeeb;
+  --surface-3: #e4e4e0;
+  --border: rgba(10, 10, 11, 0.07);
+  --border-strong: rgba(10, 10, 11, 0.13);
   --text: #0a0a0b;
   --text-2: #5c5c64;
   --text-3: #9b9ba3;
   --overlay: rgba(10, 10, 11, 0.32);
-  --chrome: rgba(247, 247, 245, 0.78);
+  --chrome: rgba(255, 255, 255, 0.82);
 
   /* Le volt reste la couleur de remplissage ; en texte sur fond clair on fonce. */
   --accent-ink: #5d7a00;

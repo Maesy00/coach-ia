@@ -76,8 +76,8 @@ const Settings = (() => {
     content.querySelector("#settings-theme").appendChild(
       segmented(
         [
-          { value: "dark", label: "Sombre" },
           { value: "light", label: "Clair" },
+          { value: "dark", label: "Sombre" },
           { value: "auto", label: "Auto" },
         ],
         theme,

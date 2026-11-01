@@ -193,7 +193,7 @@ const Fmt = (() => {
   };
 })();
 
-/* --- Thème : sombre par défaut, clair, ou celui de l'iPhone --- */
+/* --- Thème : clair (fond blanc) par défaut, sombre, ou celui de l'iPhone --- */
 
 const Theme = (() => {
   const KEY = "coach.theme";
@@ -201,9 +201,9 @@ const Theme = (() => {
 
   function get() {
     try {
-      return localStorage.getItem(KEY) || "dark";
+      return localStorage.getItem(KEY) || "light";
     } catch {
-      return "dark";
+      return "light";
     }
   }
 
@@ -211,7 +211,7 @@ const Theme = (() => {
     const choice = get();
     const resolved = choice === "auto" ? (media.matches ? "light" : "dark") : choice;
     document.documentElement.dataset.theme = resolved;
-    document.querySelector('meta[name="theme-color"]').content = resolved === "light" ? "#f7f7f5" : "#0a0a0b";
+    document.querySelector('meta[name="theme-color"]').content = resolved === "light" ? "#ffffff" : "#0a0a0b";
   }
 
   function set(choice) {

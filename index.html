@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="fr" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -10,20 +10,20 @@
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Coach.ia">
-  <meta name="theme-color" content="#0a0a0b">
+  <meta name="theme-color" content="#ffffff">
   <script>
     // Thème appliqué avant l'affichage, pour éviter un flash clair/sombre.
-    // En clair, la barre d'état de l'iPhone passe en texte foncé (au prochain lancement).
+    // En sombre, la barre d'état de l'iPhone passe en texte clair (au prochain lancement).
     (function () {
-      var choice = "dark";
-      try { choice = localStorage.getItem("coach.theme") || "dark"; } catch (e) {}
-      var light = choice === "light" || (choice === "auto" && window.matchMedia("(prefers-color-scheme: light)").matches);
-      document.documentElement.dataset.theme = light ? "light" : "dark";
-      if (light) {
-        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = "default";
-        document.querySelector('meta[name="theme-color"]').content = "#f7f7f5";
+      var choice = "light";
+      try { choice = localStorage.getItem("coach.theme") || "light"; } catch (e) {}
+      var dark = choice === "dark" || (choice === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      if (dark) {
+        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = "black-translucent";
+        document.querySelector('meta[name="theme-color"]').content = "#0a0a0b";
       }
     })();
   </script>

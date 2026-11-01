@@ -24,6 +24,15 @@ const Week = (() => {
     { value: "recup", label: "Récup" },
   ];
 
+  // Les 4 créneaux de la grille, comme dans Pause. Une séance va dans le
+  // créneau de son heure ; sans heure, elle va le matin.
+  const SLOTS = [
+    { id: "matin", label: "Matin", short: "Matin", from: 0, to: 11, time: "07:00" },
+    { id: "midi", label: "Midi", short: "Midi", from: 11, to: 14, time: "12:00" },
+    { id: "apres_midi", label: "Après-midi", short: "Aprèm", from: 14, to: 18, time: "14:00" },
+    { id: "soir", label: "Soir", short: "Soir", from: 18, to: 24, time: "18:00" },
+  ];
+
   let weekStart = DateUtil.weekStart(DateUtil.today());
   let suppressClick = false;
 
@@ -41,6 +50,12 @@ const Week = (() => {
 
   function isDone(plan) {
     return !!(plan.activityId || plan.doneAt);
+  }
+
+  function slotOf(time) {
+    if (!time) return "matin";
+    const hour = Number(time.slice(0, 2));
+    return SLOTS.find((slot) => hour >= slot.from && hour < slot.to).id;
   }
 
   function intensityLabel(value) {
@@ -153,28 +168,30 @@ const Week = (() => {
           : ""
       }
 
-      <div class="days">
+      <section class="card week-grid">
+        <div class="grid-row grid-head"><span></span>${SLOTS.map((slot) => `<span>${slot.short}</span>`).join("")}</div>
         ${days()
           .map((date) => {
             const plans = s.planList.filter((p) => p.date === date);
             const linked = new Set(plans.map((p) => p.activityId));
             const extra = s.activities.filter((a) => a.date === date && !linked.has(a.id));
             return `
-              <section class="day${date === today ? " is-today" : ""}${!plans.length && !extra.length ? " is-empty" : ""}" data-date="${date}">
-                <header class="day-head">
-                  <span class="day-name">${date === today ? "Aujourd'hui" : escapeHtml(Fmt.weekdayLong(date))}</span>
-                  <span class="day-date num">${escapeHtml(Fmt.shortDay(date))}${!plans.length && !extra.length ? " · repos" : ""}</span>
-                  <button type="button" class="icon-btn sm" data-add="${date}" aria-label="Prévoir une séance le ${escapeHtml(Fmt.longDay(date))}">${icon("plus")}</button>
-                </header>
-                <div class="day-items">
-                  ${plans.map(planCard).join("")}
-                  ${extra.map(extraRow).join("")}
+              <div class="grid-row grid-day${date === today ? " is-today" : ""}">
+                <div class="grid-date">
+                  <span class="grid-weekday">${escapeHtml(Fmt.weekdayShort(date))}</span>
+                  <span class="grid-daynum num">${DateUtil.parse(date).getDate()}</span>
                 </div>
-              </section>`;
+                ${SLOTS.map((slot) => gridCell(date, slot, plans.filter((p) => slotOf(p.startTime) === slot.id), extra.filter((a) => slotOf(a.startTime) === slot.id), today)).join("")}
+              </div>`;
           })
           .join("")}
+      </section>
+      <div class="grid-legend">
+        <span><i class="legend-swatch legend-planned"></i>Prévue</span>
+        <span><i class="legend-swatch legend-done"></i>Faite</span>
+        <span><i class="legend-swatch legend-extra"></i>Faite sans être prévue</span>
       </div>
-      <p class="section-note" style="text-align:center;margin-top:var(--s-4)">Appui long sur une séance pour la déplacer.</p>
+      <p class="section-note" style="text-align:center">Touche une case pour prévoir une séance. Maintiens une séance puis fais-la glisser pour la déplacer.</p>
     `;
 
     screen.querySelectorAll("[data-shift]").forEach((b) =>
@@ -189,47 +206,62 @@ const Week = (() => {
       weekStart = DateUtil.weekStart(DateUtil.today());
       render();
     });
-    screen.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => editPlanned(null, b.dataset.add)));
     screen.querySelector("#week-menu").addEventListener("click", openMenu);
-    screen.querySelectorAll("[data-plan]").forEach((card) => {
-      const plan = Storage.getPlanned().find((p) => p.id === card.dataset.plan);
-      card.querySelector(".check-slot").appendChild(checkButton(isDone(plan), (done) => toggleDone(plan, done), "Fait"));
-      card.addEventListener("click", (event) => {
-        if (suppressClick || event.target.closest(".check")) return;
-        editPlanned(plan);
-      });
-      enableDrag(card, plan);
-    });
-    screen.querySelectorAll("[data-activity]").forEach((row) =>
-      row.addEventListener("click", () => History.openActivity(Storage.getActivity(row.dataset.activity)))
+    screen.querySelectorAll(".grid-cell").forEach((cell) =>
+      cell.addEventListener("click", (event) => {
+        if (suppressClick) return;
+        const chip = event.target.closest("[data-plan], [data-activity]");
+        if (chip && chip.dataset.plan) return editPlanned(Storage.getPlanned().find((p) => p.id === chip.dataset.plan));
+        if (chip) return History.openActivity(Storage.getActivity(chip.dataset.activity));
+        editPlanned(null, cell.dataset.date, SLOTS.find((slot) => slot.id === cell.dataset.slot).time);
+      })
     );
+    screen.querySelectorAll("[data-plan]").forEach((chip) => enableDrag(chip, Storage.getPlanned().find((p) => p.id === chip.dataset.plan)));
 
     Settings.bindButton(screen);
     watchLargeTitle(screen);
   }
 
-  function planCard(plan) {
-    const sport = Storage.sportOrFallback(plan.sport);
+  // Libellé court pour une case : le programme, sinon l'intensité, sinon le sport.
+  function shortLabel(plan, sport) {
+    const program = plan.programId ? Storage.getProgram(plan.programId) : null;
+    return program ? program.name : intensityLabel(plan.intensity) || sport.name;
+  }
+
+  function gridCell(date, slot, plans, extra, today) {
+    const empty = !plans.length && !extra.length;
+    const label = `${Fmt.longDay(date)}, ${slot.label}`;
     return `
-      <div class="plan-card${isDone(plan) ? " is-done" : ""}" data-plan="${plan.id}" role="button" tabindex="0">
-        ${sportTile(sport)}
-        <div class="row-main">
-          <p class="row-title">${escapeHtml(planTitle(plan))}</p>
-          <p class="row-sub num">${escapeHtml(planMeta(plan))}${plan.notes ? ` · ${escapeHtml(plan.notes)}` : ""}</p>
-        </div>
-        <span class="check-slot"></span>
+      <div class="grid-cell${empty ? " is-empty" : ""}" data-date="${date}" data-slot="${slot.id}" role="button" tabindex="0"
+        aria-label="${escapeHtml(empty ? `${label} : libre, prévoir une séance` : label)}">
+        ${plans.map((p) => planChip(p, today)).join("")}
+        ${extra.map(extraChip).join("")}
       </div>
     `;
   }
 
-  function extraRow(activity) {
+  function planChip(plan, today) {
+    const sport = Storage.sportOrFallback(plan.sport);
+    const done = isDone(plan);
+    const past = !done && plan.date < today;
+    return `
+      <div class="grid-chip${done ? " is-done" : ""}${past ? " is-past" : ""}" data-plan="${plan.id}" style="--sport:${escapeHtml(sport.color)}"
+        aria-label="${escapeHtml(`${planTitle(plan)}${plan.startTime ? ` à ${plan.startTime}` : ""}${done ? ", faite" : ""}`)}">
+        ${icon(sport.icon)}
+        <span class="grid-chip-text">${escapeHtml(shortLabel(plan, sport))}</span>
+        ${done ? `<span class="grid-chip-mark">${icon("check")}</span>` : ""}
+      </div>
+    `;
+  }
+
+  function extraChip(activity) {
     const sport = Storage.sportOrFallback(activity.sport);
     return `
-      <button type="button" class="extra-row" data-activity="${activity.id}">
-        ${sportTile(sport, "sm")}
-        <span class="row-main"><span class="row-title">${escapeHtml(activity.title || sport.name)}</span><span class="row-sub num">Réalisé · ${escapeHtml(Fmt.duration(activity.durationMinutes))}${activity.distanceKm ? ` · ${escapeHtml(Fmt.distance(activity.distanceKm, activity.sport))}` : ""}</span></span>
-        ${icon("check-circle", "fill", "extra-check")}
-      </button>
+      <div class="grid-chip is-extra" data-activity="${activity.id}" style="--sport:${escapeHtml(sport.color)}"
+        aria-label="${escapeHtml(`${activity.title || sport.name}, faite sans être prévue`)}">
+        ${icon(sport.icon)}
+        <span class="grid-chip-text">${escapeHtml(Fmt.duration(activity.durationMinutes))}</span>
+      </div>
     `;
   }
 
@@ -271,7 +303,7 @@ const Week = (() => {
       ghost.hidden = true;
       const under = document.elementFromPoint(p.clientX, p.clientY);
       ghost.hidden = false;
-      const day = under ? under.closest(".day") : null;
+      const day = under ? under.closest(".grid-cell") : null;
       if (day !== target) {
         if (target) target.classList.remove("drop-target");
         target = day;
@@ -292,13 +324,17 @@ const Week = (() => {
       suppressClick = true;
       setTimeout(() => (suppressClick = false), 300);
       const date = target ? target.dataset.date : null;
+      const slot = target ? SLOTS.find((x) => x.id === target.dataset.slot) : null;
       if (target) target.classList.remove("drop-target");
       target = null;
-      if (date && date !== plan.date) {
-        if (await Storage.update("planned", plan.id, { date })) {
-          showToast(`Déplacée au ${Fmt.weekdayLong(date)}`, "arrows-down-up");
-          App.renderAll();
-        }
+      if (!date) return;
+      // Changer de créneau donne l'heure type du créneau ; dans le même créneau, l'heure est gardée.
+      const changes = { date };
+      if (slotOf(plan.startTime) !== slot.id) changes.startTime = slot.time;
+      if (date === plan.date && !changes.startTime) return;
+      if (await Storage.update("planned", plan.id, changes)) {
+        showToast(`Déplacée : ${Fmt.weekdayLong(date)} ${slot.label.toLowerCase()}`, "arrows-down-up");
+        App.renderAll();
       }
     }
 
@@ -310,8 +346,7 @@ const Week = (() => {
     card.addEventListener(
       "touchstart",
       (e) => {
-        if (e.target.closest(".check")) return;
-        start = point(e);
+          start = point(e);
         start = { x: start.clientX, y: start.clientY };
         timer = setTimeout(() => {
           timer = null;
@@ -345,7 +380,7 @@ const Week = (() => {
 
     // Souris (Mac) : on glisse dès que le pointeur bouge de quelques pixels.
     card.addEventListener("mousedown", (e) => {
-      if (e.button !== 0 || e.target.closest(".check")) return;
+      if (e.button !== 0) return;
       const origin = { x: e.clientX, y: e.clientY };
       const onMove = (ev) => {
         if (!ghost && Math.hypot(ev.clientX - origin.x, ev.clientY - origin.y) > 6) begin(ev);
@@ -365,11 +400,11 @@ const Week = (() => {
   // Ajouter / modifier une séance prévue
   // ---------------------------------------------------------------------
 
-  function editPlanned(plan, date = DateUtil.today()) {
+  function editPlanned(plan, date = DateUtil.today(), time = null) {
     const sports = Storage.getSports();
     const draft = plan
       ? { ...plan }
-      : { date, startTime: "", durationMinutes: 60, sport: (sports[0] || {}).slug || "running", intensity: null, notes: "", programId: null };
+      : { date, startTime: time || "", durationMinutes: 60, sport: (sports[0] || {}).slug || "running", intensity: null, notes: "", programId: null };
 
     const body = html(`
       <div>
@@ -431,6 +466,7 @@ const Week = (() => {
       <div style="display:contents">
         ${canStart ? `<button type="button" class="btn btn-primary btn-block" data-start>${icon("play", "fill")} Démarrer la séance</button>` : ""}
         <button type="button" class="btn ${canStart ? "btn-secondary" : "btn-primary"} btn-block" data-save>${plan ? "Enregistrer" : "Prévoir la séance"}</button>
+        ${plan ? `<button type="button" class="btn btn-secondary btn-block" data-toggle-done>${isDone(plan) ? `${icon("arrow-counter-clockwise")} Pas encore faite` : `${icon("check")} C'est fait`}</button>` : ""}
         ${plan ? `<button type="button" class="btn btn-ghost btn-block" data-delete>Supprimer</button>` : ""}
       </div>
     `);
@@ -464,6 +500,15 @@ const Week = (() => {
           showToast("Séance supprimée", "trash");
           App.renderAll();
         }
+      });
+    }
+    const doneBtn = footer.querySelector("[data-toggle-done]");
+    if (doneBtn) {
+      doneBtn.addEventListener("click", async () => {
+        doneBtn.disabled = true;
+        sheet.close();
+        Haptic.tap();
+        await toggleDone(plan, !isDone(plan));
       });
     }
     const startBtn = footer.querySelector("[data-start]");
