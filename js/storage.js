@@ -135,6 +135,17 @@ const Storage = (() => {
     else await load("sports");
   }
 
+  async function refreshDefaultLooks() {
+    const stale = cache.sports.filter((sp) => {
+      const old = LEGACY_DEFAULT_LOOK[sp.slug];
+      return sp.isDefault && old && sp.icon === old.icon && sp.color === old.color;
+    });
+    for (const sp of stale) {
+      const look = DEFAULT_SPORTS.find((d) => d.slug === sp.slug);
+      await update("sports", sp.id, { icon: look.icon, color: look.color });
+    }
+  }
+
   async function refresh() {
     const {
       data: { user },
@@ -143,7 +154,10 @@ const Storage = (() => {
     userEmail = user ? user.email : "";
     loadErrors = [];
     const results = await Promise.all(Object.keys(KINDS).map(load));
-    if (results[0] && userId) await ensureDefaultSports();
+    if (results[0] && userId) {
+      await ensureDefaultSports();
+      await refreshDefaultLooks();
+    }
     return results.every(Boolean);
   }
 
@@ -244,7 +258,7 @@ const Storage = (() => {
   }
 
   function sportOrFallback(slug) {
-    return getSport(slug) || { slug, name: slug || "Autre", icon: "lightning", color: "#8c9bb0", hasDistance: false };
+    return getSport(slug) || { slug, name: slug || "Autre", icon: "lightning", color: "#6b7a90", hasDistance: false };
   }
 
   function addSport(sport) {

@@ -121,7 +121,7 @@ const Migration = (() => {
   async function run(plan, onStep) {
     // 1. Sports de Pause inconnus → sports perso (ex. « Randonnée »).
     for (const name of plan.unknownPause) {
-      if (!Importers.mapType(name)) await Storage.addSport({ name, icon: "person-simple-walk", color: "#8c9bb0", hasDistance: true });
+      if (!Importers.mapType(name)) await Storage.addSport({ name, icon: "footprints", color: "#6b7a90", hasDistance: true });
     }
 
     // 2. Exercices perso, puis table de correspondance ancien id → nouvel id.

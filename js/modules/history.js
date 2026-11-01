@@ -415,7 +415,7 @@ const History = (() => {
           content.innerHTML = `
             <label class="drop-zone">
               <input type="file" multiple accept=".fit,.gpx,.tcx,.zip,.gz,.csv" hidden>
-              ${sportTile({ color: "var(--accent-ink)", icon: "file-arrow-up" }, "lg")}
+              <span class="sport-tile lg neutral">${icon("file-arrow-up")}</span>
               <span class="card-title">Choisir des fichiers</span>
               <span class="card-text">.FIT (Garmin), .GPX, .TCX, ou l'archive .zip d'export Strava</span>
             </label>

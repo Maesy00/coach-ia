@@ -87,7 +87,7 @@ const Chart = (() => {
 
       // Le point est dessiné en HTML pour rester rond malgré l'étirement du SVG.
       if (!dot) {
-        dot = html(`<span style="position:absolute;width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px var(--surface);transform:translate(-50%,-50%);pointer-events:none"></span>`);
+        dot = html(`<span style="position:absolute;width:11px;height:11px;border-radius:50%;background:var(--text);box-shadow:0 0 0 3px var(--surface);transform:translate(-50%,-50%);pointer-events:none"></span>`);
         el.appendChild(dot);
       }
       const px = (cx / width) * rect.width;

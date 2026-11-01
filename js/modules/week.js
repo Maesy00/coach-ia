@@ -679,7 +679,7 @@ const Week = (() => {
       const httpsUrl = `${CALENDAR_FEED_URL}?token=${token}`;
       const webcalUrl = httpsUrl.replace(/^https:/, "webcal:");
       body.innerHTML = `
-        <div class="calendar-hero">${sportTile({ color: "var(--accent-ink)", icon: "calendar-dots" }, "lg")}</div>
+        <div class="calendar-hero"><span class="sport-tile lg neutral">${icon("calendar-dots")}</span></div>
         <p class="card-text" style="margin:0 0 var(--s-5)">Tes séances prévues apparaissent dans le calendrier de l'iPhone, dans un calendrier « Coach.ia », et se mettent à jour toutes seules (environ toutes les heures).</p>
         <a class="btn btn-primary btn-block" href="${escapeHtml(webcalUrl)}">${icon("calendar-plus")} S'abonner dans Calendrier</a>
         <button type="button" class="btn btn-secondary btn-block" data-copy style="margin-top:var(--s-2)">${icon("link")} Copier le lien</button>
