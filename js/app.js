@@ -6,9 +6,9 @@ const App = (() => {
   const tabButtons = document.querySelectorAll(".tab");
   const screens = {
     today: { el: document.getElementById("screen-today"), view: () => Today },
-    week: { el: document.getElementById("screen-week"), view: () => WeekScreen },
-    strength: { el: document.getElementById("screen-strength"), view: () => StrengthScreen },
-    history: { el: document.getElementById("screen-history"), view: () => HistoryScreen },
+    week: { el: document.getElementById("screen-week"), view: () => Week },
+    strength: { el: document.getElementById("screen-strength"), view: () => Strength },
+    history: { el: document.getElementById("screen-history"), view: () => History },
   };
   let currentTab = "today";
   let hiddenAt = null;

@@ -69,17 +69,127 @@ function showToast(message, iconName = "check-circle") {
   }, 2400);
 }
 
+/* --- Dates : tout est manipulé en "AAAA-MM-JJ", en heure locale --- */
+
+const DateUtil = (() => {
+  const pad = (n) => String(n).padStart(2, "0");
+
+  function toISO(date) {
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  }
+
+  function parse(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function addDays(iso, n) {
+    const d = parse(iso);
+    d.setDate(d.getDate() + n);
+    return toISO(d);
+  }
+
+  // Lundi de la semaine de cette date.
+  function weekStart(iso) {
+    const d = parse(iso);
+    return addDays(iso, -((d.getDay() + 6) % 7));
+  }
+
+  // Numéro de semaine ISO 8601.
+  function weekNumber(iso) {
+    const d = parse(iso);
+    d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+    const firstThursday = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d - firstThursday) / 86400000 - 3 + ((firstThursday.getDay() + 6) % 7)) / 7);
+  }
+
+  function daysBetween(a, b) {
+    return Math.round((parse(b) - parse(a)) / 86400000);
+  }
+
+  return {
+    toISO,
+    parse,
+    addDays,
+    weekStart,
+    weekNumber,
+    daysBetween,
+    today: () => toISO(new Date()),
+    weekday: (iso) => (parse(iso).getDay() + 6) % 7, // 0 = lundi
+    nowTime: () => {
+      const d = new Date();
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    },
+  };
+})();
+
 /* --- Formats --- */
 
 const Fmt = (() => {
   const longDay = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
   const shortDay = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+  const weekdayShort = new Intl.DateTimeFormat("fr-FR", { weekday: "short" });
+  const weekdayLong = new Intl.DateTimeFormat("fr-FR", { weekday: "long" });
+  const monthYear = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" });
+  const monthShort = new Intl.DateTimeFormat("fr-FR", { month: "short" });
   const number = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+  const number2 = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
+  const integer = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+  const toDate = (d) => (typeof d === "string" ? DateUtil.parse(d) : d);
+  const clean = (s) => s.replace(".", "");
+
+  // 95 → "1 h 35" ; 45 → "45 min"
+  function duration(minutes) {
+    const m = Math.round(minutes || 0);
+    if (m < 60) return `${m} min`;
+    const h = Math.floor(m / 60);
+    return m % 60 ? `${h} h ${String(m % 60).padStart(2, "0")}` : `${h} h`;
+  }
+
+  // Heures décimales pour les grands chiffres : 95 → "1,6"
+  function hours(minutes) {
+    return number.format((minutes || 0) / 60);
+  }
+
+  // La natation se compte en mètres, le reste en kilomètres.
+  function distance(km, sport) {
+    if (km === null || km === undefined || km === "") return "";
+    if (sport === "swimming") return `${integer.format(km * 1000)} m`;
+    return `${number2.format(km)} km`;
+  }
+
+  // Allure (course, natation) ou vitesse (vélo).
+  function pace(km, minutes, sport) {
+    if (!km || !minutes) return "";
+    if (sport === "cycling") return `${number.format(km / (minutes / 60))} km/h`;
+    const per = sport === "swimming" ? minutes / (km * 10) : minutes / km;
+    const total = Math.round(per * 60);
+    return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")} ${sport === "swimming" ? "/100 m" : "/km"}`;
+  }
+
+  function clock(seconds) {
+    const s = Math.max(0, Math.round(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = String(s % 60).padStart(2, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+  }
 
   return {
-    longDay: (date) => longDay.format(date),
-    shortDay: (date) => shortDay.format(date),
+    longDay: (date) => longDay.format(toDate(date)),
+    shortDay: (date) => clean(shortDay.format(toDate(date))),
+    weekdayShort: (date) => clean(weekdayShort.format(toDate(date))),
+    weekdayLong: (date) => weekdayLong.format(toDate(date)),
+    monthYear: (date) => monthYear.format(toDate(date)),
+    monthShort: (date) => clean(monthShort.format(toDate(date))),
     number: (value) => number.format(value),
+    integer: (value) => integer.format(value),
+    duration,
+    hours,
+    distance,
+    pace,
+    clock,
   };
 })();
 
@@ -208,4 +318,127 @@ function topbar({ title, leading = "", trailing = "" }) {
       <div class="topbar-side">${trailing}</div>
     </header>
   `;
+}
+
+/* --- Compteur − valeur + (charges, répétitions, durées) ---
+ * La valeur est aussi modifiable au clavier. onChange(nombre) à chaque changement.
+ */
+function stepper({ label = "", value = 0, step = 1, min = 0, max = 9999, unit = "", size = "", onChange }) {
+  const el = html(`
+    <div class="stepper${size ? ` stepper-${size}` : ""}">
+      ${label ? `<span class="stepper-label">${escapeHtml(label)}</span>` : ""}
+      <div class="stepper-row">
+        <button type="button" class="stepper-btn" data-delta="-1" aria-label="Moins">${icon("minus")}</button>
+        <label class="stepper-value">
+          <input type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(label || "Valeur")}">
+          ${unit ? `<span class="stepper-unit">${escapeHtml(unit)}</span>` : ""}
+        </label>
+        <button type="button" class="stepper-btn" data-delta="1" aria-label="Plus">${icon("plus")}</button>
+      </div>
+    </div>
+  `);
+  const input = el.querySelector("input");
+  let current = Number(value) || 0;
+
+  // Le champ prend la largeur de son contenu, pour que « 12 kg » reste centré.
+  const show = () => {
+    input.value = Fmt.number(current);
+    input.style.width = `${Math.max(1, input.value.length) + 0.4}ch`;
+  };
+  const set = (next, notify = true) => {
+    current = Math.min(max, Math.max(min, Math.round(next * 100) / 100));
+    show();
+    if (notify) onChange(current);
+  };
+
+  el.querySelectorAll("[data-delta]").forEach((btn) =>
+    btn.addEventListener("click", () => {
+      Haptic.tap();
+      set(current + Number(btn.dataset.delta) * step);
+    })
+  );
+  input.addEventListener("focus", () => input.select());
+  input.addEventListener("input", () => (input.style.width = `${Math.max(1, input.value.length) + 0.4}ch`));
+  input.addEventListener("change", () => {
+    const parsed = Number(input.value.replace(",", ".").replace(/[^\d.]/g, ""));
+    set(isNaN(parsed) ? current : parsed);
+  });
+  show();
+  return { el, set: (v) => set(v, false), get: () => current };
+}
+
+/* --- Question oui/non dans une feuille --- */
+
+function confirmSheet({ title, text, confirmLabel, danger = false }) {
+  return new Promise((resolve) => {
+    let answered = false;
+    const footer = html(`
+      <div style="display:contents">
+        <button type="button" class="btn ${danger ? "btn-danger" : "btn-primary"} btn-block" data-yes>${escapeHtml(confirmLabel)}</button>
+        <button type="button" class="btn btn-ghost btn-block" data-no>Annuler</button>
+      </div>
+    `);
+    const sheet = Sheet.open({
+      title,
+      body: html(`<p class="card-text" style="margin:0">${escapeHtml(text)}</p>`),
+      footer,
+      onClose: () => !answered && resolve(false),
+    });
+    footer.querySelector("[data-yes]").addEventListener("click", () => {
+      answered = true;
+      sheet.close();
+      resolve(true);
+    });
+    footer.querySelector("[data-no]").addEventListener("click", () => sheet.close());
+  });
+}
+
+/* --- Bip de fin de repos (Web Audio, pas de fichier son) --- */
+
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.22].forEach((offset) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      const t = ctx.currentTime + offset;
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.start(t);
+      osc.stop(t + 0.2);
+    });
+    setTimeout(() => ctx.close(), 800);
+  } catch {
+    // Contexte audio indisponible : la vibration suffit.
+  }
+}
+
+/* --- Puces de choix (sport, intensité, période…) ---
+ * options : [{ value, label, color?, icon? }] ; plusieurs choix si multiple.
+ */
+function choiceChips(options, value, onChange) {
+  const el = html(`<div class="choice-chips"></div>`);
+  options.forEach((o) => {
+    const btn = html(`
+      <button type="button" class="choice-chip" data-value="${escapeHtml(o.value)}" ${o.color ? `style="--sport:${escapeHtml(o.color)}"` : ""}>
+        ${o.icon ? icon(o.icon) : o.color ? `<span class="chip-dot"></span>` : ""}${escapeHtml(o.label)}
+      </button>
+    `);
+    btn.addEventListener("click", () => {
+      Haptic.tap();
+      select(o.value);
+      onChange(o.value);
+    });
+    el.appendChild(btn);
+  });
+  function select(v) {
+    el.querySelectorAll(".choice-chip").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === String(v))));
+  }
+  select(value);
+  return el;
 }

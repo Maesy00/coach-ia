@@ -43,6 +43,25 @@ const Settings = (() => {
         </button>
       </div>
 
+      <h3 class="section-label">Données</h3>
+      <div class="list has-tiles">
+        <button type="button" class="row" id="settings-migrate">
+          <span class="sport-tile sm neutral">${icon("arrow-square-in")}</span>
+          <span class="row-main"><span class="row-title">Reprendre mes données</span><span class="row-sub">Aurora, Ironly et Pause</span></span>
+          ${icon("caret-right", "regular", "row-chevron")}
+        </button>
+        <button type="button" class="row" id="settings-import">
+          <span class="sport-tile sm neutral">${icon("file-arrow-up")}</span>
+          <span class="row-main"><span class="row-title">Importer Garmin / Strava</span><span class="row-sub">.FIT, .GPX, .TCX, archive .zip</span></span>
+          ${icon("caret-right", "regular", "row-chevron")}
+        </button>
+        <button type="button" class="row" id="settings-calendar">
+          <span class="sport-tile sm neutral">${icon("calendar-dots")}</span>
+          <span class="row-main"><span class="row-title">Apple Calendar</span><span class="row-sub">Abonnement à tes séances prévues</span></span>
+          ${icon("caret-right", "regular", "row-chevron")}
+        </button>
+      </div>
+
       <h3 class="section-label">À propos</h3>
       <div class="list has-tiles">
         <button type="button" class="row" id="settings-design">
@@ -51,7 +70,7 @@ const Settings = (() => {
           ${icon("caret-right", "regular", "row-chevron")}
         </button>
       </div>
-      <p class="section-note">Coach.ia · version 0.1 (étape 1)</p>
+      <p class="section-note">Coach.ia · version 1.0</p>
     `;
 
     content.querySelector("#settings-theme").appendChild(
@@ -67,6 +86,9 @@ const Settings = (() => {
     );
     content.querySelector("#settings-sports").addEventListener("click", () => openSports("Réglages"));
     content.querySelector("#settings-design").addEventListener("click", () => DesignSystem.open());
+    content.querySelector("#settings-migrate").addEventListener("click", () => Migration.open());
+    content.querySelector("#settings-import").addEventListener("click", () => History.openImport());
+    content.querySelector("#settings-calendar").addEventListener("click", () => Week.openCalendar());
     content.querySelector("#settings-signout").addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
       Page.popAll();

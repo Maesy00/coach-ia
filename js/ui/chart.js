@@ -122,5 +122,62 @@ const Chart = (() => {
     return el;
   }
 
-  return { line };
+  // Barres (volume par semaine ou par mois) ; même infobulle au toucher que la courbe.
+  function bars(points, { unit = "", height = 140, format = Fmt.number, highlightLast = true } = {}) {
+    const max = Math.max(...points.map((p) => p.value), 0) || 1;
+    const el = html(`
+      <div class="chart chart-bars" style="height:${height + 22}px">
+        <div class="bars" style="height:${height}px">
+          ${points
+            .map(
+              (p, i) =>
+                `<span class="bar${highlightLast && i === points.length - 1 ? " current" : ""}" style="height:${Math.max(p.value > 0 ? 3 : 0, (p.value / max) * 100)}%"></span>`
+            )
+            .join("")}
+        </div>
+        <div class="chart-tip"></div>
+        <div class="chart-axis"><span>${escapeHtml(points[0].label)}</span><span>${escapeHtml(points[points.length - 1].label)}</span></div>
+      </div>
+    `);
+    el.setAttribute("role", "img");
+    el.setAttribute("aria-label", points.map((p) => `${p.label} : ${format(p.value)} ${unit}`).join(", "));
+    const tip = el.querySelector(".chart-tip");
+    const barEls = [...el.querySelectorAll(".bar")];
+    let lastIndex = -1;
+
+    function show(clientX) {
+      const rect = el.querySelector(".bars").getBoundingClientRect();
+      const index = Math.min(points.length - 1, Math.max(0, Math.floor(((clientX - rect.left) / rect.width) * points.length)));
+      if (index !== lastIndex) {
+        lastIndex = index;
+        Haptic.tap();
+      }
+      barEls.forEach((b, i) => b.classList.toggle("active", i === index));
+      const p = points[index];
+      tip.innerHTML = `<strong>${escapeHtml(format(p.value))}${unit ? ` ${escapeHtml(unit)}` : ""}</strong><span>${escapeHtml(p.label)}</span>`;
+      const center = ((index + 0.5) / points.length) * rect.width;
+      const half = tip.offsetWidth / 2;
+      tip.style.left = `${Math.min(rect.width - half, Math.max(half, center))}px`;
+      el.classList.add("is-active");
+    }
+
+    function hide() {
+      el.classList.remove("is-active");
+      barEls.forEach((b) => b.classList.remove("active"));
+      lastIndex = -1;
+    }
+
+    el.addEventListener("pointerdown", (event) => show(event.clientX));
+    el.addEventListener("pointermove", (event) => {
+      if (event.pointerType === "mouse" || event.buttons) show(event.clientX);
+    });
+    el.addEventListener("pointerup", (event) => {
+      if (event.pointerType !== "mouse") hide();
+    });
+    el.addEventListener("pointerleave", hide);
+    el.addEventListener("pointercancel", hide);
+    return el;
+  }
+
+  return { line, bars };
 })();
