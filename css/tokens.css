@@ -66,7 +66,7 @@
   /* Zones sûres de l'iPhone */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tabbar-h: 70px; /* pilule de 62 px + 8 px d'écart avec le bas */
+  --tabbar-h: 62px; /* hauteur de la pilule flottante */
 
   color-scheme: dark;
 }
