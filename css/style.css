@@ -95,6 +95,7 @@ i.ph-fill {
 #app-shell {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   transition: transform var(--t-slow) var(--ease-out), filter var(--t-slow) var(--ease-out);
 }
 
@@ -1190,6 +1191,7 @@ a.row:active {
 .page {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -1219,6 +1221,7 @@ a.row:active {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   z-index: 60;
   background: var(--overlay);
   opacity: 0;
@@ -1233,7 +1236,7 @@ a.row:active {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   z-index: 61;
   display: flex;
   flex-direction: column;
@@ -1308,7 +1311,7 @@ a.row:active {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--s-4));
+  bottom: calc(var(--tabbar-h) + var(--safe-bottom) + var(--s-4) - var(--vgap, 0px));
   z-index: 80;
   display: flex;
   align-items: center;
@@ -1340,6 +1343,7 @@ a.row:active {
 #auth-gate {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   overflow-y: auto;
   display: flex;
   align-items: center;
@@ -1778,6 +1782,7 @@ select.input {
 .workout {
   position: fixed;
   inset: 0;
+  bottom: calc(0px - var(--vgap, 0px));
   z-index: 45;
   display: flex;
   flex-direction: column;
