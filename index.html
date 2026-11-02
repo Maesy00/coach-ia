@@ -27,34 +27,6 @@
       }
     })();
   </script>
-  <script>
-    // App installée sur l'écran d'accueil (iOS récent, barre d'état claire) :
-    // iOS déclare un écran plus court que l'écran réel (de la hauteur de la
-    // barre d'état) tout en dessinant jusqu'en bas. On mesure l'écart et on
-    // prolonge le cadre de l'app d'autant (--vgap) ; sans ce défaut, l'écart vaut 0.
-    (function () {
-      function fit() {
-        var standalone = navigator.standalone || window.matchMedia("(display-mode: standalone)").matches;
-        var gap = 0;
-        if (standalone) {
-          var probe = document.createElement("div");
-          probe.style.cssText = "position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top);visibility:hidden";
-          document.documentElement.appendChild(probe);
-          var safeTop = probe.offsetHeight;
-          probe.remove();
-          var portrait = window.matchMedia("(orientation: portrait)").matches;
-          var screenH = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-          // Écart seulement si la vue démarre sous la barre d'état (safeTop > 0) et paraît trop courte.
-          if (safeTop > 0) gap = Math.max(0, Math.min(80, screenH - window.innerHeight));
-        }
-        document.documentElement.style.setProperty("--vgap", gap + "px");
-      }
-      fit();
-      window.addEventListener("resize", fit);
-      window.addEventListener("orientationchange", function () { setTimeout(fit, 300); });
-      document.addEventListener("visibilitychange", function () { if (!document.hidden) fit(); });
-    })();
-  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
