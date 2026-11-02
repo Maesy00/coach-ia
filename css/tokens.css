@@ -18,7 +18,7 @@
   --text-2: #a1a1aa;
   --text-3: #66666e;
   --overlay: rgba(0, 0, 0, 0.6);
-  --chrome: rgba(10, 10, 11, 0.72);
+  --chrome: rgba(28, 28, 31, 0.78);
 
   --accent: #c8f542;
   --accent-ink: #c8f542;
@@ -66,7 +66,7 @@
   /* Zones sûres de l'iPhone */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --tabbar-h: 58px;
+  --tabbar-h: 70px; /* pilule de 62 px + 8 px d'écart avec le bas */
 
   color-scheme: dark;
 }
