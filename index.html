@@ -10,21 +10,20 @@
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Coach.ia">
   <meta name="theme-color" content="#ffffff">
   <script>
     // Thème appliqué avant l'affichage, pour éviter un flash clair/sombre.
-    // En sombre, la barre d'état de l'iPhone passe en texte clair (au prochain lancement).
+    // La barre d'état reste « black-translucent » dans les deux thèmes : c'est le
+    // seul réglage où iOS donne tout l'écran à l'app installée (avec « default »,
+    // iOS garde une bande vide en bas, de la hauteur de la barre d'état).
     (function () {
       var choice = "light";
       try { choice = localStorage.getItem("coach.theme") || "light"; } catch (e) {}
       var dark = choice === "dark" || (choice === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
       document.documentElement.dataset.theme = dark ? "dark" : "light";
-      if (dark) {
-        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = "black-translucent";
-        document.querySelector('meta[name="theme-color"]').content = "#0a0a0b";
-      }
+      if (dark) document.querySelector('meta[name="theme-color"]').content = "#0a0a0b";
     })();
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
