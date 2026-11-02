@@ -294,7 +294,7 @@ const Week = (() => {
     }
 
     function scrollLoop() {
-      if (autoScroll) screen.scrollTop += autoScroll;
+      if (autoScroll) window.scrollBy(0, autoScroll);
       frame = requestAnimationFrame(scrollLoop);
     }
 

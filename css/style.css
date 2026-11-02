@@ -12,14 +12,19 @@
   box-sizing: border-box;
 }
 
+/* Comme dans Pause : la page elle-même défile (pas de cadre verrouillé à
+   100 % de hauteur), et la barre d'onglets est fixée au bas de l'écran.
+   Un cadre verrouillé s'arrête avant le bas de l'écran sur iPhone en mode app. */
 html,
 body {
-  height: 100%;
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  overflow: hidden;
-  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: clip;
 }
 
 body {
@@ -92,29 +97,17 @@ i.ph-fill {
 
 /* ---------- Coquille de l'app ---------- */
 
-#app-shell {
-  position: fixed;
-  inset: 0;
+.screens {
   transition: transform var(--t-slow) var(--ease-out), filter var(--t-slow) var(--ease-out);
 }
 
-#app-shell.behind,
+.screens.behind,
 .page.behind {
   transform: translateX(-24%);
   filter: brightness(0.6);
 }
 
-.screens {
-  position: absolute;
-  inset: 0;
-}
-
 .screen {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
   padding: 0 var(--gutter) calc(var(--tabbar-h) + var(--safe-bottom) + var(--s-10));
   display: none;
 }
@@ -1124,11 +1117,11 @@ a.row:active {
 /* ---------- Barre d'onglets : pilule flottante au-dessus du bas de l'écran (comme Pause) ---------- */
 
 .tabbar {
-  position: absolute;
+  position: fixed;
   left: 16px;
   right: 16px;
-  /* Au ras de la barre d'accueil, comme les apps de l'iPhone (~22 pt du bord), 10 px sans zone sûre. */
-  bottom: max(10px, calc(var(--safe-bottom) - 12px));
+  /* Même position que dans Pause : 10 px au-dessus de la zone de la barre d'accueil. */
+  bottom: calc(var(--safe-bottom) + 10px);
   z-index: 10;
   max-width: 460px;
   height: 62px;
@@ -2574,4 +2567,11 @@ a.btn {
 
 .extra-row .row-title {
   white-space: normal;
+}
+
+/* Les zones qui défilent dans une page, une feuille ou la séance ne font pas défiler la page derrière. */
+.page > .screen-scroll,
+.sheet-body,
+.wk-body {
+  overscroll-behavior: contain;
 }

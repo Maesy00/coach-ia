@@ -12,23 +12,26 @@ const App = (() => {
   };
   let currentTab = "today";
   let hiddenAt = null;
+  const scrollByTab = {};
 
   function renderAll() {
-    Object.values(screens).forEach((s) => {
-      const scroll = s.el.scrollTop;
-      s.view().render();
-      s.el.scrollTop = scroll;
-    });
+    const y = window.scrollY;
+    Object.values(screens).forEach((s) => s.view().render());
+    window.scrollTo(0, y);
   }
 
+  // La page entière défile : on retient la position de chaque onglet.
   function go(tab) {
     if (tab === currentTab) {
-      screens[tab].el.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
+    if (currentTab) scrollByTab[currentTab] = window.scrollY;
     currentTab = tab;
     tabButtons.forEach((btn) => btn.setAttribute("aria-selected", String(btn.dataset.tab === tab)));
     Object.entries(screens).forEach(([id, s]) => s.el.classList.toggle("active", id === tab));
+    window.scrollTo(0, scrollByTab[tab] || 0);
+    window.dispatchEvent(new Event("scroll"));
   }
 
   function start() {

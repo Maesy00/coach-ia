@@ -12,7 +12,7 @@ const Page = (() => {
   const stack = [];
 
   function behindOf(index) {
-    return index > 0 ? stack[index - 1].el : document.getElementById("app-shell");
+    return index > 0 ? stack[index - 1].el : document.querySelector(".screens");
   }
 
   function pop() {

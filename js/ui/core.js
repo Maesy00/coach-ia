@@ -299,14 +299,27 @@ function ring(value, max, size = 64, stroke = 7) {
   `;
 }
 
-/* --- Barre du haut : le petit titre apparaît quand le grand titre sort de l'écran --- */
+/* --- Barre du haut : le petit titre apparaît quand le grand titre sort de l'écran ---
+ * Les onglets défilent avec la page (window) ; les pages empilées ont leur propre zone.
+ */
+const largeTitleWatchers = new Map();
 
-function watchLargeTitle(scroller) {
-  const bar = scroller.querySelector(".topbar");
-  const title = scroller.querySelector(".large-title");
+function watchLargeTitle(container) {
+  const previous = largeTitleWatchers.get(container);
+  if (previous) previous.source.removeEventListener("scroll", previous.update);
+  const bar = container.querySelector(".topbar");
+  const title = container.querySelector(".large-title");
   if (!bar || !title) return;
-  const update = () => bar.classList.toggle("is-scrolled", scroller.scrollTop > title.offsetTop + title.offsetHeight - bar.offsetHeight);
-  scroller.addEventListener("scroll", update, { passive: true });
+  const isTab = container.classList.contains("screen");
+  const source = isTab ? window : container;
+  const update = () => {
+    if (isTab && !container.classList.contains("active")) return;
+    const y = isTab ? window.scrollY : container.scrollTop;
+    const top = isTab ? title.getBoundingClientRect().top + window.scrollY : title.offsetTop;
+    bar.classList.toggle("is-scrolled", y > top + title.offsetHeight - bar.offsetHeight);
+  };
+  source.addEventListener("scroll", update, { passive: true });
+  largeTitleWatchers.set(container, { source, update });
   update();
 }
 
