@@ -137,7 +137,7 @@ const Strength = (() => {
       <div class="card program-card pressable" data-program="${program.id}" role="button" tabindex="0">
         <div class="program-card-main">
           <h2 class="card-title">${escapeHtml(program.name)}</h2>
-          <p class="card-text">${program.exercises.length} exercice${program.exercises.length > 1 ? "s" : ""} · ~${estimatedMinutes(program)} min${last ? ` · fait le ${Fmt.shortDay(last)}` : ""}</p>
+          <p class="card-text">${program.exercises.length} exercice${program.exercises.length > 1 ? "s" : ""} · ~${Fmt.duration(estimatedMinutes(program))}${last ? ` · fait le ${Fmt.shortDay(last)}` : ""}</p>
         </div>
         <button type="button" class="play-btn" data-start aria-label="Démarrer ${escapeHtml(program.name)}">${icon("play", "fill")}</button>
       </div>
@@ -195,7 +195,7 @@ const Strength = (() => {
         content.innerHTML = `
           <div class="bento">
             <section class="card"><div class="card-label">${icon("list-checks")} Exercices</div><span class="metric">${current.exercises.length}</span><p class="metric-sub">${totalSets} séries</p></section>
-            <section class="card"><div class="card-label">${icon("timer")} Durée</div><span class="metric">~${estimatedMinutes(current)}</span><span class="metric-unit">min</span><p class="metric-sub">estimée</p></section>
+            <section class="card"><div class="card-label">${icon("timer")} Durée</div><span class="metric num">~${Fmt.duration(estimatedMinutes(current))}</span><p class="metric-sub">estimée</p></section>
           </div>
           <button type="button" class="btn btn-primary btn-block btn-lg" id="program-start" style="margin-top:var(--s-4)">${icon("play", "fill")} Démarrer la séance</button>
 

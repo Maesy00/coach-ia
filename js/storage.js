@@ -53,6 +53,8 @@ const Storage = (() => {
 
   const NUMERIC = new Set(["duration_minutes", "distance_km", "elevation_m"]);
   const cache = Object.fromEntries(Object.keys(KINDS).map((k) => [k, []]));
+  // Réglages personnels (une ligne par utilisateur) : FC de repos, FC max, profil TRIMP.
+  let settings = { restHr: null, maxHr: null, trimpProfile: "m" };
   let userId = null;
   let userEmail = "";
   let loadErrors = [];
@@ -153,7 +155,7 @@ const Storage = (() => {
     userId = user ? user.id : null;
     userEmail = user ? user.email : "";
     loadErrors = [];
-    const results = await Promise.all(Object.keys(KINDS).map(load));
+    const results = await Promise.all([...Object.keys(KINDS).map(load), loadSettings()]);
     if (results[0] && userId) {
       await ensureDefaultSports();
       await refreshDefaultLooks();
@@ -232,6 +234,32 @@ const Storage = (() => {
     return true;
   }
 
+  // ---- Réglages personnels ----
+
+  async function loadSettings() {
+    const { data, error } = await supabaseClient.from("coach_settings").select("*").maybeSingle();
+    if (error) {
+      console.error("Erreur de chargement des réglages :", error.message);
+      return true; // sans réglages, la charge se calcule sans la FC
+    }
+    if (data) settings = { restHr: data.rest_hr, maxHr: data.max_hr, trimpProfile: data.trimp_profile || "m" };
+    return true;
+  }
+
+  async function saveSettings(changes) {
+    const next = { ...settings, ...changes };
+    const { error } = await supabaseClient.from("coach_settings").upsert(
+      { user_id: userId, rest_hr: next.restHr, max_hr: next.maxHr, trimp_profile: next.trimpProfile, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+    if (error) {
+      console.error("Erreur d'enregistrement des réglages :", error.message);
+      return false;
+    }
+    settings = next;
+    return true;
+  }
+
   // ---- Compte ----
 
   function getUserEmail() {
@@ -289,6 +317,8 @@ const Storage = (() => {
     refresh,
     getUserEmail,
     getLoadErrors,
+    getSettings: () => settings,
+    saveSettings,
     insert,
     insertMany,
     update,

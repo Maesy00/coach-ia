@@ -414,7 +414,8 @@ const Week = (() => {
           <label class="field"><span class="field-label">Jour</span><input class="input" type="date" data-date required></label>
           <label class="field"><span class="field-label">Heure (facultatif)</span><input class="input" type="time" data-time></label>
         </div>
-        <div data-duration style="margin-bottom:var(--s-5)"></div>
+        <span class="field-label">Durée</span>
+        <div class="field-row" data-duration></div>
         <div data-variant></div>
         <label class="field"><span class="field-label">Notes</span><textarea class="input" rows="2" placeholder="Ex. 10 × 400 m, récup 1 min" data-notes></textarea></label>
       </div>
@@ -434,8 +435,12 @@ const Week = (() => {
     body.querySelector("[data-date]").addEventListener("change", (e) => (draft.date = e.target.value || draft.date));
     body.querySelector("[data-time]").value = draft.startTime || "";
     body.querySelector("[data-time]").addEventListener("change", (e) => (draft.startTime = e.target.value || null));
-    body.querySelector("[data-duration]").appendChild(
-      stepper({ label: "Durée", value: draft.durationMinutes, step: 5, min: 5, max: 600, unit: "min", onChange: (v) => (draft.durationMinutes = v) }).el
+    const durationBox = body.querySelector("[data-duration]");
+    durationBox.appendChild(
+      stepper({ label: "Heures", value: Math.floor(draft.durationMinutes / 60), max: 24, onChange: (v) => (draft.durationMinutes = v * 60 + (draft.durationMinutes % 60)) }).el
+    );
+    durationBox.appendChild(
+      stepper({ label: "Minutes", value: draft.durationMinutes % 60, step: 5, max: 55, onChange: (v) => (draft.durationMinutes = Math.floor(draft.durationMinutes / 60) * 60 + v) }).el
     );
     const notes = body.querySelector("[data-notes]");
     notes.value = draft.notes || "";

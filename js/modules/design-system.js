@@ -41,7 +41,7 @@ const DesignSystem = (() => {
       <h3 class="section-label">Graphique · touche et glisse</h3>
       <section class="card" id="ds-chart">
         <div class="card-label">${icon("chart-line-up")} Volume hebdomadaire</div>
-        <span class="metric">7,0</span><span class="metric-unit">h</span>
+        <span class="metric num">07:00</span>
       </section>
 
       <h3 class="section-label">Validation</h3>
@@ -90,12 +90,12 @@ const DesignSystem = (() => {
       </div>
     `;
 
-    const points = DEMO_WEEKS.map((value, i) => ({ label: `S${33 + i}`, value }));
-    content.querySelector("#ds-chart").appendChild(Chart.line(points, { unit: "h" }));
+    const points = DEMO_WEEKS.map((value, i) => ({ label: `S${33 + i}`, value: Math.round(value * 60) }));
+    content.querySelector("#ds-chart").appendChild(Chart.line(points, { format: Fmt.duration }));
 
     const checks = content.querySelector("#ds-checks");
     [
-      { title: "Footing EF · 45 min", sport: Storage.getSport("running") },
+      { title: "Footing EF · 00:45", sport: Storage.getSport("running") },
       { title: "Full body A", sport: Storage.getSport("strength") },
     ].forEach(({ title, sport }) => {
       const row = html(`

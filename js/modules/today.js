@@ -54,13 +54,13 @@ const Today = (() => {
 
         <section class="card">
           <div class="card-label">${icon("timer")} 7 jours</div>
-          <span class="metric">${Fmt.hours(last7)}</span><span class="metric-unit">h</span>
+          <span class="metric num">${Fmt.duration(last7)}</span>
           <p class="metric-sub">${delta === null ? "d'entraînement" : `<span class="${delta >= 0 ? "up" : ""}">${delta >= 0 ? "+" : ""}${delta} %</span> vs 7 j avant`}</p>
         </section>
 
         <section class="card span-2" id="today-trend">
           <div class="card-label">${icon("trend-up")} Volume · 12 semaines</div>
-          <span class="metric">${Fmt.hours(weeks[weeks.length - 1].minutes)}</span><span class="metric-unit">h cette semaine</span>
+          <span class="metric num">${Fmt.duration(weeks[weeks.length - 1].minutes)}</span><span class="metric-unit">cette semaine</span>
         </section>
 
         <section class="card">
@@ -83,7 +83,7 @@ const Today = (() => {
     `;
 
     if (weeks.some((w) => w.minutes > 0)) {
-      screen.querySelector("#today-trend").appendChild(Chart.line(weeks.map((w) => ({ label: `${w.label} · ${Fmt.shortDay(w.start)}`, value: Math.round((w.minutes / 60) * 10) / 10 })), { unit: "h", height: 96 }));
+      screen.querySelector("#today-trend").appendChild(Chart.line(weeks.map((w) => ({ label: `${w.label} · ${Fmt.shortDay(w.start)}`, value: w.minutes })), { format: Fmt.duration, height: 96 }));
     }
     bindSession(todays, pending);
     screen.querySelector("#today-week").addEventListener("click", () => App.go("week"));

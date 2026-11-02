@@ -2,19 +2,39 @@
  * stats.js — calculs partagés par l'Accueil et l'Historique : volume par
  * semaine/mois, charge d'entraînement, records.
  *
- * Charge d'entraînement = sRPE (méthode de Foster) : RPE × durée en minutes.
- * Sans RPE noté, on estime le RPE à partir de l'intensité prévue ou du sport
- * (valeurs modérées), et l'interface le signale comme une estimation.
+ * Charge d'entraînement = RPE × durée en minutes (sRPE, méthode de Foster).
+ * Le RPE vient, dans l'ordre :
+ *   1. de ce que tu as noté (RPE ressenti) ;
+ *   2. de la fréquence cardiaque, si l'activité a une FC moyenne et que la FC de
+ *      repos et la FC max sont renseignées (TRIMP de Banister, ramené à l'échelle
+ *      du RPE pour pouvoir additionner les deux) ;
+ *   3. sinon d'une estimation (intensité prévue, sport, ou 5), signalée comme telle.
  */
 
 const Stats = (() => {
   const INTENSITY_RPE = { recup: 2, ef: 3, sortie_longue: 5, tempo: 6, seuil: 7, fractionne: 8, vma: 9 };
   const SPORT_RPE = { strength: 6, yoga: 3, pilates: 4 };
 
+  // TRIMP de Banister par minute : FCr × a × e^(b × FCr), avec FCr = (FC moy − FC repos) / (FC max − FC repos).
+  // Coefficients : homme a = 0,64, b = 1,92 ; femme a = 0,86, b = 1,67.
+  // × 2,8 le ramène sur l'échelle du RPE : FCr 0,5 ≈ 2 (facile), 0,7 ≈ 5, 0,9 ≈ 9.
+  const TRIMP_TO_RPE = 2.8;
+
+  function hrRpe(activity) {
+    const { restHr, maxHr, trimpProfile } = Storage.getSettings();
+    if (!activity.avgHr || !restHr || !maxHr || maxHr <= restHr) return null;
+    const hrr = Math.min(1, Math.max(0, (activity.avgHr - restHr) / (maxHr - restHr)));
+    const [a, b] = trimpProfile === "f" ? [0.86, 1.67] : [0.64, 1.92];
+    return Math.min(10, Math.max(1, TRIMP_TO_RPE * hrr * a * Math.exp(b * hrr)));
+  }
+
+  // source : "rpe" (noté), "fc" (fréquence cardiaque) ou "estimate"
   function rpeOf(activity) {
-    if (activity.rpe) return { value: activity.rpe, estimated: false };
+    if (activity.rpe) return { value: activity.rpe, estimated: false, source: "rpe" };
+    const fromHr = hrRpe(activity);
+    if (fromHr !== null) return { value: fromHr, estimated: false, source: "fc" };
     const intensity = activity.details && activity.details.intensity;
-    return { value: INTENSITY_RPE[intensity] || SPORT_RPE[activity.sport] || 5, estimated: true };
+    return { value: INTENSITY_RPE[intensity] || SPORT_RPE[activity.sport] || 5, estimated: true, source: "estimate" };
   }
 
   function loadOf(activity) {
@@ -90,5 +110,10 @@ const Stats = (() => {
     return out;
   }
 
-  return { rpeOf, loadOf, filter, sum, weekly, monthly, trainingLoad, records };
+  // FC la plus haute vue dans les activités : point de départ pour la FC max.
+  function observedMaxHr(activities) {
+    return activities.reduce((max, a) => Math.max(max, a.maxHr || 0), 0) || null;
+  }
+
+  return { rpeOf, loadOf, filter, sum, weekly, monthly, trainingLoad, records, observedMaxHr };
 })();

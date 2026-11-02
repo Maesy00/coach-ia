@@ -61,8 +61,8 @@ const History = (() => {
       <div class="bento">
         <section class="card">
           <div class="card-label">${icon("timer")} Temps</div>
-          <span class="metric">${Fmt.hours(minutes)}</span><span class="metric-unit">h</span>
-          <p class="metric-sub">${Fmt.hours(minutes / weeks)} h / semaine</p>
+          <span class="metric num">${Fmt.duration(minutes)}</span>
+          <p class="metric-sub">${Fmt.duration(minutes / weeks)} / semaine</p>
         </section>
         <section class="card">
           <div class="card-label">${showDistance ? `${icon("path")} Distance` : `${icon("hash")} Séances`}</div>
@@ -81,7 +81,8 @@ const History = (() => {
             <div><span class="metric">${load.ratio !== null ? Fmt.number(Math.round(load.ratio * 100) / 100) : "—"}</span><p class="metric-sub">${escapeHtml(load.status)}</p></div>
             <div class="load-meter" aria-hidden="true"><span class="load-zone"></span><span class="load-cursor" style="left:${load.ratio !== null ? Math.min(100, (load.ratio / 2) * 100) : 50}%"></span></div>
           </div>
-          <p class="card-text num">7 derniers jours : ${Fmt.integer(load.acute)} · moyenne sur 4 semaines : ${Fmt.integer(load.chronic)} (sRPE)</p>
+          <p class="card-text num">7 derniers jours : ${Fmt.integer(load.acute)} · moyenne sur 4 semaines : ${Fmt.integer(load.chronic)}</p>
+          ${!Storage.getSettings().maxHr ? `<p class="card-text">Renseigne ta FC de repos et ta FC max (Réglages) pour tenir compte de la fréquence cardiaque.</p>` : ""}
         </section>
         ${sport ? recordsCard(all, sport) : ""}
       </div>
@@ -111,8 +112,8 @@ const History = (() => {
     );
     screen.querySelector("#history-volume").appendChild(
       Chart.bars(
-        buckets.map((b) => ({ label: def.bucket === "week" ? `${b.label} · ${Fmt.shortDay(b.start)}` : Fmt.monthYear(b.start), value: Math.round((b.minutes / 60) * 10) / 10 })),
-        { unit: "h" }
+        buckets.map((b) => ({ label: def.bucket === "week" ? `${b.label} · ${Fmt.shortDay(b.start)}` : Fmt.monthYear(b.start), value: b.minutes })),
+        { format: Fmt.duration }
       )
     );
     renderList(list);
@@ -208,7 +209,7 @@ const History = (() => {
       activity.avgHr ? { label: "FC moyenne", value: `${activity.avgHr} bpm` } : null,
       activity.maxHr ? { label: "FC max", value: `${activity.maxHr} bpm` } : null,
       { label: "RPE", value: activity.rpe ? `${activity.rpe}/10` : "—" },
-      { label: "Charge", value: `${Fmt.integer(Stats.loadOf(activity))}${rpe.estimated ? " (est.)" : ""}` },
+      { label: "Charge", value: `${Fmt.integer(Stats.loadOf(activity))}${rpe.source === "fc" ? " (FC)" : rpe.estimated ? " (est.)" : ""}` },
     ].filter(Boolean);
     const strength = activity.details && Array.isArray(activity.details.exercises) ? activity.details.exercises : null;
 
@@ -290,9 +291,10 @@ const History = (() => {
           <div data-minutes></div>
         </div>
         <div data-distance></div>
+        <div data-hr style="margin-bottom:var(--s-5)"></div>
         <span class="field-label">Ressenti (RPE)</span>
         <div class="rpe-grid" data-rpe>${Array.from({ length: 10 }, (_, i) => `<button type="button" class="rpe-btn num" data-value="${i + 1}">${i + 1}</button>`).join("")}</div>
-        <p class="section-note" style="margin-bottom:var(--s-5)">1 très facile · 5 modéré · 10 maximal. Sert à calculer la charge.</p>
+        <p class="section-note" style="margin-bottom:var(--s-5)">1 très facile · 5 modéré · 10 maximal. Sert à calculer la charge ; sans RPE, la FC moyenne est utilisée.</p>
         <label class="field"><span class="field-label">Titre (facultatif)</span><input class="input" type="text" maxlength="80" data-field="title"></label>
         <label class="field"><span class="field-label">Notes</span><textarea class="input" rows="2" data-field="notes"></textarea></label>
       </div>
@@ -340,6 +342,9 @@ const History = (() => {
       box.appendChild(row);
     }
     paintDistance();
+    body.querySelector("[data-hr]").appendChild(
+      stepper({ label: "FC moyenne (facultatif, 0 = inconnue)", value: draft.avgHr || 0, step: 1, max: 230, unit: "bpm", onChange: (v) => (draft.avgHr = v || null) }).el
+    );
 
     const rpeButtons = body.querySelectorAll("[data-rpe] button");
     const paintRpe = () => rpeButtons.forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.value) === draft.rpe)));
@@ -366,6 +371,7 @@ const History = (() => {
         distanceKm: sport.hasDistance ? draft.distanceKm : null,
         elevationM: sport.hasDistance ? draft.elevationM : null,
         rpe: draft.rpe,
+        avgHr: draft.avgHr || null,
         title: (draft.title || "").trim() || null,
         notes: (draft.notes || "").trim(),
       };

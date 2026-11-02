@@ -139,17 +139,10 @@ const Fmt = (() => {
   const toDate = (d) => (typeof d === "string" ? DateUtil.parse(d) : d);
   const clean = (s) => s.replace(".", "");
 
-  // 95 → "1 h 35" ; 45 → "45 min"
+  // Durées toujours en HH:MM : 95 → "01:35" ; 45 → "00:45" ; 1362 → "22:42"
   function duration(minutes) {
     const m = Math.round(minutes || 0);
-    if (m < 60) return `${m} min`;
-    const h = Math.floor(m / 60);
-    return m % 60 ? `${h} h ${String(m % 60).padStart(2, "0")}` : `${h} h`;
-  }
-
-  // Heures décimales pour les grands chiffres : 95 → "1,6"
-  function hours(minutes) {
-    return number.format((minutes || 0) / 60);
+    return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
   }
 
   // La natation se compte en mètres, le reste en kilomètres.
@@ -186,7 +179,6 @@ const Fmt = (() => {
     number: (value) => number.format(value),
     integer: (value) => integer.format(value),
     duration,
-    hours,
     distance,
     pace,
     clock,

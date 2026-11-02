@@ -41,6 +41,11 @@ const Settings = (() => {
           <span class="row-main"><span class="row-title">Mes sports</span></span>
           <span class="row-value">${count}</span>${icon("caret-right", "regular", "row-chevron")}
         </button>
+        <button type="button" class="row" id="settings-hr">
+          <span class="sport-tile sm neutral">${icon("heartbeat")}</span>
+          <span class="row-main"><span class="row-title">FC repos et max</span></span>
+          <span class="row-value">${hrSummary()}</span>${icon("caret-right", "regular", "row-chevron")}
+        </button>
       </div>
 
       <h3 class="section-label">Données</h3>
@@ -85,6 +90,7 @@ const Settings = (() => {
       )
     );
     content.querySelector("#settings-sports").addEventListener("click", () => openSports("Réglages"));
+    content.querySelector("#settings-hr").addEventListener("click", openHeartRate);
     content.querySelector("#settings-design").addEventListener("click", () => DesignSystem.open());
     content.querySelector("#settings-migrate").addEventListener("click", () => Migration.open());
     content.querySelector("#settings-import").addEventListener("click", () => History.openImport());
@@ -92,6 +98,58 @@ const Settings = (() => {
     content.querySelector("#settings-signout").addEventListener("click", async () => {
       await supabaseClient.auth.signOut();
       Page.popAll();
+    });
+  }
+
+  // ---- Fréquence cardiaque (charge TRIMP) ----
+
+  function hrSummary() {
+    const { restHr, maxHr } = Storage.getSettings();
+    return restHr && maxHr ? `${restHr} / ${maxHr}` : "À renseigner";
+  }
+
+  function openHeartRate() {
+    Page.push({
+      title: "Fréquence cardiaque",
+      backLabel: "Réglages",
+      render(content) {
+        const current = Storage.getSettings();
+        const observed = Stats.observedMaxHr(Storage.getActivities());
+        const draft = { restHr: current.restHr || 60, maxHr: current.maxHr || observed || 190, trimpProfile: current.trimpProfile || "m" };
+
+        content.innerHTML = `
+          <p class="card-text" style="margin:0 4px var(--s-5)">Sert à calculer la charge des activités qui ont une fréquence cardiaque moyenne (imports Garmin et Strava, ou saisie). Les autres gardent le RPE noté ou une estimation.</p>
+          <div class="field-row">
+            <div data-rest></div>
+            <div data-max></div>
+          </div>
+          <p class="section-note" style="margin:calc(-1 * var(--s-3)) 4px var(--s-5)">
+            FC de repos : le matin au réveil, allongé.
+            ${observed ? `FC la plus haute vue dans tes activités : <strong class="num">${observed} bpm</strong>.` : "FC max : la plus haute atteinte à fond (ou 220 − ton âge, à défaut)."}
+          </p>
+          <span class="field-label">Formule</span>
+          <div data-profile></div>
+          <p class="section-note">La méthode TRIMP de Banister utilise des coefficients différents pour les hommes et les femmes.</p>
+          <button type="button" class="btn btn-primary btn-block btn-lg" data-save style="margin-top:var(--s-6)">Enregistrer</button>
+        `;
+        content.querySelector("[data-rest]").appendChild(stepper({ label: "FC de repos", value: draft.restHr, min: 30, max: 120, unit: "bpm", onChange: (v) => (draft.restHr = v) }).el);
+        content.querySelector("[data-max]").appendChild(stepper({ label: "FC max", value: draft.maxHr, min: 120, max: 230, unit: "bpm", onChange: (v) => (draft.maxHr = v) }).el);
+        content.querySelector("[data-profile]").appendChild(
+          segmented([{ value: "m", label: "Homme" }, { value: "f", label: "Femme" }], draft.trimpProfile, (v) => (draft.trimpProfile = v))
+        );
+        content.querySelector("[data-save]").addEventListener("click", async (event) => {
+          if (draft.maxHr <= draft.restHr) return showToast("La FC max doit dépasser la FC de repos", "warning-circle");
+          event.currentTarget.disabled = true;
+          if (await Storage.saveSettings(draft)) {
+            Haptic.tap();
+            showToast("Fréquence cardiaque enregistrée");
+            Page.pop();
+          } else {
+            event.currentTarget.disabled = false;
+            showToast("Enregistrement impossible, réessaie", "warning-circle");
+          }
+        });
+      },
     });
   }
 

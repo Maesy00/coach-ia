@@ -200,3 +200,26 @@ $$;
 
 revoke all on function coach_calendar_feed(text) from public;
 grant execute on function coach_calendar_feed(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Réglages personnels : FC de repos et FC max, pour la charge par la
+-- fréquence cardiaque (TRIMP). Une ligne par utilisateur.
+-- trimp_profile : 'm' (coefficient 1,92) ou 'f' (1,67), formule de Banister.
+-- ---------------------------------------------------------------------------
+
+create table if not exists coach_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  rest_hr smallint check (rest_hr between 30 and 120),
+  max_hr smallint check (max_hr between 120 and 230),
+  trimp_profile text not null default 'm' check (trimp_profile in ('m', 'f')),
+  updated_at timestamptz not null default now()
+);
+
+alter table coach_settings enable row level security;
+
+drop policy if exists "coach_settings_select_own" on coach_settings;
+drop policy if exists "coach_settings_insert_own" on coach_settings;
+drop policy if exists "coach_settings_update_own" on coach_settings;
+create policy "coach_settings_select_own" on coach_settings for select using (auth.uid() = user_id);
+create policy "coach_settings_insert_own" on coach_settings for insert with check (auth.uid() = user_id);
+create policy "coach_settings_update_own" on coach_settings for update using (auth.uid() = user_id);
