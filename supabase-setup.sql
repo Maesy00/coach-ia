@@ -1,6 +1,6 @@
 -- Coach.ia — tables Supabase.
 -- À exécuter dans l'éditeur SQL du projet Supabase « Aurora » (le même que
--- pour Aurora, Ironly, Pause et Osmosy : même compte de connexion).
+-- pour Aurora, Ironly, Pause et Inventory.ia : même compte de connexion).
 -- Tables préfixées "coach_" : aucun risque pour les données des autres apps.
 -- Le script peut être relancé sans danger (if not exists partout).
 --
